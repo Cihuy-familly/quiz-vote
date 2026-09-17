@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+psycopg2-binary
+opentelemetry-distro
+opentelemetry-exporter-otlp-proto-http
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-requests
+prometheus-client
+pydantic

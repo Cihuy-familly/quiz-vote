@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  frontend:
+    image: quiz-vote/frontend:latest
+    build:
+      context: ./services/frontend
+    ports:
+      - "5000:5000"
+    environment:
+      VOTE_API_URL: http://vote-api:8000
+      RESULT_API_URL: http://result-api:8001
+    depends_on:
+      - vote-api
+      - result-api
+    networks:
+      - quiz-vote-net
+
+  vote-api:
+    image: quiz-vote/vote-api:latest
+    build:
+      context: ./services/vote-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://quizvote:quizvote@postgres:5432/quizvote
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - quiz-vote-net
+
+  result-api:
+    image: quiz-vote/result-api:latest
+    build:
+      context: ./services/result-api
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://quizvote:quizvote@postgres:5432/quizvote
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - quiz-vote-net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - quiz-vote-net
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: quizvote
+      POSTGRES_PASSWORD: quizvote
+      POSTGRES_DB: quizvote
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - quiz-vote-net
+
+  load-generator:
+    profiles: ["traffic"]
+    image: quiz-vote/load-generator:latest
+    build:
+      context: ./services/load-generator
+    environment:
+      VOTE_API_URL: http://vote-api:8000
+      VOTES_PER_SECOND: "0.5"
+      ERROR_RATE: "0.0"
+      LATENCY_MAX: "0.0"
+    depends_on:
+      - vote-api
+    networks:
+      - quiz-vote-net
+
+networks:
+  quiz-vote-net:
+    driver: bridge
+
+volumes:
+  pgdata:

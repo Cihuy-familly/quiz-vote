@@ -1,0 +1,140 @@
+/* Quiz Vote App - Custom Styles */
+
+body {
+    background-color: #f5f7fb;
+    min-height: 100vh;
+}
+
+.navbar {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.quiz-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.quiz-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.quiz-card .card-body {
+    padding: 1.5rem;
+}
+
+.quiz-card .card-title {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.quiz-card .card-text {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.question-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #34495e;
+}
+
+.option-label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 28px;
+}
+
+.result-option {
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 0.75rem;
+}
+
+.result-option .progress {
+    height: 24px;
+    border-radius: 12px;
+    background-color: #e9ecef;
+}
+
+.result-option .progress-bar {
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 24px;
+}
+
+.total-votes {
+    text-align: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    color: #6c757d;
+}
+
+.option-value {
+    font-size: 0.95rem;
+}
+
+.vote-form .form-check {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.vote-form .form-check:hover {
+    border-color: #0d6efd;
+    background-color: #f0f4ff;
+}
+
+.vote-form .form-check-input:checked ~ .form-check-label {
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.vote-form .form-check-input:checked + .form-check-label .option-label {
+    color: #0d6efd;
+}
+
+.error-container {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.error-container .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #e9ecef;
+    border-top-color: #0d6efd;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.auto-refresh-indicator {
+    font-size: 0.8rem;
+    color: #adb5bd;
+}
+
+.footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: #adb5bd;
+    font-size: 0.9rem;
+}

@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.venv/
+env/
+venv/
+*.log
+.DS_Store
+docker-compose.override.yaml

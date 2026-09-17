@@ -1,0 +1,74 @@
+name: Build and Push
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image version tag"
+        default: "1.0.0"
+        required: false
+        type: string
+
+env:
+  REGISTRY: registry.cihuyproject.my.id
+  IMAGE_NAMESPACE: quiz-vote
+
+jobs:
+  test:
+    runs-on: [self-hosted, cihuy-service]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfiles exist
+        run: |
+          services=("frontend" "vote-api" "result-api" "load-generator")
+          for service in "${services[@]}"; do
+            if [ -f "./services/$service/Dockerfile" ]; then
+              echo "OK: services/$service/Dockerfile"
+            else
+              echo "FAIL: services/$service/Dockerfile not found"
+              exit 1
+            fi
+          done
+
+  build-and-push:
+    needs: test
+    runs-on: [self-hosted, cihuy-service]
+    strategy:
+      matrix:
+        service: [frontend, vote-api, result-api, load-generator]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine version tag
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "tag=${{ inputs.version }}"
+          elif [ -f VERSION ]; then
+            echo "tag=$(cat VERSION)"
+          else
+            echo "tag=latest"
+          fi >> "$GITHUB_OUTPUT"
+
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.version.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:latest

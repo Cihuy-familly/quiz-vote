@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    runs-on: [self-hosted, cihuy-service]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfiles exist
+        run: |
+          services=("frontend" "vote-api" "result-api" "load-generator")
+          for service in "${services[@]}"; do
+            if [ -f "./services/$service/Dockerfile" ]; then
+              echo "OK: services/$service/Dockerfile"
+            else
+              echo "FAIL: services/$service/Dockerfile not found"
+              exit 1
+            fi
+          done
+
+      - name: Test-build frontend
+        run: docker build -t test-frontend ./services/frontend
+
+      - name: Test-build vote-api
+        run: docker build -t test-vote-api ./services/vote-api
+
+      - name: Test-build result-api
+        run: docker build -t test-result-api ./services/result-api
+
+      - name: Test-build load-generator
+        run: docker build -t test-load-generator ./services/load-generator

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.title }} - Results{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <a href="/" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Quizzes</a>
+        <a href="{{ url_for('quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary mb-3 ms-2">Vote Again</a>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h3 class="card-title mb-1">{{ quiz.title }}</h3>
+                        <p class="question-text mb-0">{{ quiz.question }}</p>
+                    </div>
+                    <span class="auto-refresh-indicator">Live</span>
+                </div>
+
+                <hr class="my-3">
+
+                {% set total_votes = results.options | sum(attribute='votes') %}
+
+                {% for option in results.options %}
+                {% set percentage = (option.votes / total_votes * 100) | round(1) if total_votes > 0 else 0 %}
+                <div class="result-option">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>
+                            <strong>{{ ['A', 'B', 'C', 'D'][loop.index0] }}.</span></strong>
+                            <span class="option-value">{{ option.text }}</span>
+                        </span>
+                        <span class="text-muted">{{ option.votes }} vote{{ 's' if option.votes != 1 else '' }}</span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar {% if loop.index0 == 0 %}bg-primary{% elif loop.index0 == 1 %}bg-success{% elif loop.index0 == 2 %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}" style="width: {{ percentage }}%">
+                            {% if percentage >= 8 %}{{ percentage }}%{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="total-votes mt-3">
+                    <strong>{{ total_votes }}</strong> total vote{{ 's' if total_votes != 1 else '' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh every 5 seconds for live results
+    setTimeout(function() {
+        window.location.reload();
+    }, 5000);
+</script>
+{% endblock %}
