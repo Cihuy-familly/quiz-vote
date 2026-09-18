@@ -13,7 +13,7 @@ class OptionResult(BaseModel):
     """Result breakdown for a single option within a quiz."""
     label: str
     text: str
-    count: int
+    votes: int
     percentage: float
 
 

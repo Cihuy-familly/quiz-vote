@@ -136,7 +136,25 @@ class ArtificialDelayErrorMiddleware(BaseHTTPMiddleware):
                 content={"detail": "Artificial server error injected by ERROR_RATE"},
             )
 
-        return await call_next(request)
+        # Normal request - record metrics
+        start_time = time.time()
+        response = await call_next(request)
+        duration = time.time() - start_time
+        
+        # Increment request counter
+        METRIC_HTTP_REQUESTS.labels(
+            endpoint=request.url.path,
+            method=request.method,
+            status=response.status_code,
+        ).inc()
+        
+        # Record duration
+        METRIC_HTTP_DURATION.labels(
+            endpoint=request.url.path,
+            method=request.method,
+        ).observe(duration)
+
+        return response
 
 
 # ---------------------------------------------------------------------------
@@ -218,18 +236,18 @@ async def get_quiz_results(quiz_id: int):
             "option_id": opt["id"],
             "label": opt["label"],
             "text": opt["text"],
-            "count": count,
+            "votes": count,
         })
 
     # Calculate percentages
     final_options = []
     for opt in option_results:
-        percentage = (opt["count"] / total_votes * 100) if total_votes > 0 else 0.0
+        percentage = (opt["votes"] / total_votes * 100) if total_votes > 0 else 0.0
         final_options.append(
             OptionResult(
                 label=opt["label"],
                 text=opt["text"],
-                count=opt["count"],
+                votes=opt["votes"],
                 percentage=round(percentage, 1),
             )
         )

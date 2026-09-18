@@ -165,7 +165,25 @@ class ArtificialDelayErrorMiddleware(BaseHTTPMiddleware):
                 content={"detail": "Artificial server error injected by ERROR_RATE"},
             )
 
-        return await call_next(request)
+        # Normal request - record metrics
+        start_time = time.time()
+        response = await call_next(request)
+        duration = time.time() - start_time
+        
+        # Increment request counter
+        METRIC_HTTP_REQUESTS.labels(
+            endpoint=request.url.path,
+            method=request.method,
+            status=response.status_code,
+        ).inc()
+        
+        # Record duration
+        METRIC_HTTP_DURATION.labels(
+            endpoint=request.url.path,
+            method=request.method,
+        ).observe(duration)
+
+        return response
 
 
 # ---------------------------------------------------------------------------
