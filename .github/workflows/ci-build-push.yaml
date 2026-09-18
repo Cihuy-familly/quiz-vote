@@ -36,7 +36,7 @@ jobs:
             fi
           done
 
-  build:
+  build-and-push:
     needs: test
     runs-on: [self-hosted, cihuy-service]
     strategy:
@@ -57,73 +57,21 @@ jobs:
             echo "tag=latest"
           fi >> "$GITHUB_OUTPUT"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Login to container registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | \
+            docker login "${{ env.REGISTRY }}" \
+            -u "${{ secrets.REGISTRY_USERNAME }}" \
+            --password-stdin
 
       - name: Build image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/${{ matrix.service }}
-          push: false
-          load: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.version.outputs.tag }}
-          cache-from: type=local,src=/tmp/.buildx-cache-${{ matrix.service }}
-          cache-to: type=local,dest=/tmp/.buildx-cache-${{ matrix.service }}-new,mode=max
-
-      - name: Save image to tar
         run: |
-          docker save ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.version.outputs.tag }} | gzip > /tmp/${{ matrix.service }}.tar.gz
+          docker build \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.version.outputs.tag }}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:latest" \
+            "./services/${{ matrix.service }}"
 
-      - name: Upload image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.service }}-image
-          path: /tmp/${{ matrix.service }}.tar.gz
-          retention-days: 1
-
-      - name: Move cache
+      - name: Push image
         run: |
-          rm -rf /tmp/.buildx-cache-${{ matrix.service }}
-          mv /tmp/.buildx-cache-${{ matrix.service }}-new /tmp/.buildx-cache-${{ matrix.service }}
-
-  push:
-    needs: build
-    runs-on: [self-hosted, cihuy-service]
-    strategy:
-      matrix:
-        service: [frontend, vote-api, result-api, load-generator]
-    steps:
-      - name: Determine version tag
-        id: version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "tag=${{ inputs.version }}"
-          elif [ -f VERSION ]; then
-            echo "tag=$(cat VERSION)"
-          else
-            echo "tag=latest"
-          fi >> "$GITHUB_OUTPUT"
-
-      - name: Download image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.service }}-image
-          path: /tmp
-
-      - name: Load image
-        run: |
-          docker load --input /tmp/${{ matrix.service }}.tar.gz
-
-      - name: Login to container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - name: Tag and push image
-        run: |
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.version.outputs.tag }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.version.outputs.tag }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:latest
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.version.outputs.tag }}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:latest"
